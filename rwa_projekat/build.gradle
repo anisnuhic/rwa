@@ -25,7 +25,7 @@ dependencies {
     
     // MySQL Connector
     implementation 'mysql:mysql-connector-java:8.0.33'
-    
+    //implementation 'com.h2database:h2:2.2.220'
     // JSTL za Jakarta (Tomcat 10+)
     implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:2.0.0'
     
