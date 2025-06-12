@@ -121,35 +121,40 @@ public class VideoDAO {
     }
 
     public List<Video> getTop5Videos() {
-        List<Video> topVideos = new ArrayList<>();
+    List<Video> topVideos = new ArrayList<>();
+    
+    try (Connection conn = DatabaseConnection.getConnection()) {
+        String sql = "SELECT * FROM videos ORDER BY positive_votes DESC LIMIT 5";
         
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "SELECT * FROM videos ORDER BY positive_votes DESC LIMIT 5";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
             
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Video video = new Video();
+                video.setId(rs.getInt("id"));
+                video.setTitle(rs.getString("title"));
                 
-                while (rs.next()) {
-                    Video video = new Video();
-                    video.setId(rs.getInt("id"));
-                    video.setTitle(rs.getString("title"));
-                    video.setYoutubeId(rs.getString("youtube_id"));
-                    video.setEmbedUrl(rs.getString("embed_url"));
-                    video.setPositiveVotes(rs.getInt("positive_votes"));
-                    video.setNegativeVotes(rs.getInt("negative_votes"));
-                    video.setCreatedAt(rs.getString("created_at"));
-                    
-                    topVideos.add(video);
-                }
+                // KLJUČNO: Čisti YouTube ID kao u getRandomVideos metodi
+                String youtubeId = rs.getString("youtube_id");
+                String thumbnailId = youtubeId.contains("_") ? youtubeId.split("_")[0] : youtubeId;
+                video.setYoutubeId(thumbnailId);
+                
+                video.setEmbedUrl(rs.getString("embed_url"));
+                video.setPositiveVotes(rs.getInt("positive_votes"));
+                video.setNegativeVotes(rs.getInt("negative_votes"));
+                video.setCreatedAt(rs.getString("created_at"));
+                
+                topVideos.add(video);
             }
-            
-        } catch (SQLException e) {
-            System.err.println("Greska pri dohvacanju top 5 videa: " + e.getMessage());
-            e.printStackTrace();
         }
         
-        return topVideos;
+    } catch (SQLException e) {
+        System.err.println("Greska pri dohvacanju top 5 videa: " + e.getMessage());
+        e.printStackTrace();
     }
+    
+    return topVideos;
+}
 
     public List<Video> getAllVideosSortedByVotes() {
         List<Video> videos = new ArrayList<>();
@@ -310,7 +315,10 @@ public class VideoDAO {
                     Video video = new Video();
                     video.setId(rs.getInt("id"));
                     video.setTitle(rs.getString("title"));
-                    video.setYoutubeId(rs.getString("youtube_id"));
+                    //video.setYoutubeId(rs.getString("youtube_id"));
+                    String youtubeId = rs.getString("youtube_id");
+String thumbnailId = youtubeId.contains("_") ? youtubeId.split("_")[0] : youtubeId;
+video.setYoutubeId(thumbnailId);
                     video.setEmbedUrl(rs.getString("embed_url"));
                     video.setPositiveVotes(rs.getInt("positive_votes"));
                     video.setNegativeVotes(rs.getInt("negative_votes"));
@@ -362,4 +370,41 @@ public class VideoDAO {
         int totalPages = getTotalPages(pageSize);
         return page >= 1 && page <= totalPages;
     }
+
+    // Dodaj ovu metodu u VideoDAO.java
+
+public List<Video> getSpecificVideos(int video1Id, int video2Id) {
+    List<Video> videos = new ArrayList<>();
+    String sql = "SELECT * FROM videos WHERE id = ? OR id = ? ORDER BY FIELD(id, ?, ?)";
+    
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, video1Id);
+        stmt.setInt(2, video2Id);
+        stmt.setInt(3, video1Id);  // Za ORDER BY FIELD
+        stmt.setInt(4, video2Id);
+        
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            Video video = new Video();
+            video.setId(rs.getInt("id"));
+            video.setTitle(rs.getString("title"));
+            video.setYoutubeId(rs.getString("youtube_id"));
+            video.setEmbedUrl(rs.getString("embed_url"));
+            video.setPositiveVotes(rs.getInt("positive_votes"));
+            video.setNegativeVotes(rs.getInt("negative_votes"));
+            video.setCreatedAt(rs.getString("created_at"));
+            
+            videos.add(video);
+        }
+        
+    } catch (SQLException e) {
+        System.err.println("Greška pri dohvaćanju specifičnih videa: " + e.getMessage());
+        e.printStackTrace();
+    }
+    
+    return videos;
+}
 }

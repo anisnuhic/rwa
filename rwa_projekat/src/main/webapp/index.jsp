@@ -73,6 +73,7 @@
             <div class="info-section">
                 <p><em>Klikom na "Vote for this video!" dajete pozitivan glas odabranom videu i negativan glas drugom videu!</em></p>
                 
+                
                 <div class="share-section">
                     <button type="button" class="share-btn" onclick="toggleShareOptions()">
                         📤 Podijeli trenutni par videa
@@ -162,6 +163,12 @@
     </main>
 
     <script>
+        // Provjeri da li je ovo dijeljeni link (ima video1 i video2 parametre)
+        function isSharedLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.has('video1') && urlParams.has('video2');
+        }
+        
         function voteForVideo(positiveVideoId) {
             const videoContainers = document.querySelectorAll('.video-item');
             let negativeVideoId = null;
@@ -205,6 +212,8 @@
                         
                         if (response.newVideos && response.newVideos.length === 2) {
                             updateVideos(response.newVideos);
+                            // Ukloni URL parametre nakon glasovanja da sljedeći refresh bude random
+                            clearUrlParameters();
                         } else {
                             showMessage('Glasovanje uspjesno, ali nema novih videa za prikaz.', 'warning');
                         }
@@ -234,6 +243,14 @@
                     });
                 }
             });
+        }
+        
+        // Nova funkcija za uklanjanje URL parametara
+        function clearUrlParameters() {
+            if (window.history && window.history.replaceState) {
+                const url = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({ path: url }, '', url);
+            }
         }
         
         function updateVideos(newVideos) {
@@ -318,7 +335,7 @@
                 return map[m];
             }) : '';
             
-            messageContainer.innerHTML = '<strong>' + prefix + '</strong> ' + safeMessage;
+            messageContainer.innerHTML ='</strong> ' + safeMessage;
             
             setTimeout(function() {
                 if (messageContainer.style.display !== 'none') {
@@ -358,6 +375,7 @@
                 const video1Id = videoContainers[0].getAttribute('data-video-id');
                 const video2Id = videoContainers[1].getAttribute('data-video-id');
                 
+                // Kreiraj share URL sa video parametrima
                 const shareUrl = window.location.origin + window.location.pathname + 
                                 '?video1=' + video1Id + '&video2=' + video2Id;
                 
@@ -473,7 +491,13 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Postavi share URL kada se stranica učita
             setTimeout(updateShareUrl, 500);
+            
+            // Ako je ovo dijeljeni link, prikaži poruku
+            if (isSharedLink()) {
+                showMessage('Prikazujem dijeljene videe! Kliknite "Učitaj nova random videa" za random par.', 'success');
+            }
         });
     </script>
 </body>
